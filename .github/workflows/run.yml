@@ -1,4 +1,4 @@
-name: Toot Datatracker Events
+name: BlueSky Datatracker Events
 
 on:
   push:
@@ -24,10 +24,10 @@ jobs:
         pip install -r requirements.txt
     - name: Run toot_events.py
       env:
-        TOOT_TOKEN_KEY: ${{ secrets.TOOT_TOKEN_KEY }}
-        TOOT_API_BASE: ${{ secrets.TOOT_API_BASE }}
-        TOOT_HASH: ${{ secrets.TOOT_HASH }}
-        TOOT_HASHBOTS: ${{ vars.TOOT_HASHBOTS }}
+        BSKY_TOKEN_KEY: ${{ secrets.BSKY_TOKEN_KEY }}
+        BSKY_API_BASE: ${{ secrets.BSKY_API_BASE }}
+        BSKY_HASH: ${{ secrets.BSKY_HASH }}
+        BSKY_HASHBOTS: ${{ vars.BSKY_HASHBOTS }}
       run: |
         python3 toot_events.py -g ${{ secrets.WORKING_GROUP }} -f LAST_SEEN -m > $GITHUB_STEP_SUMMARY
     - name: Push update

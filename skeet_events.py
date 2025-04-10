@@ -5,10 +5,12 @@ import json
 import os
 import sys
 
-import requests
+# import requests
 
 try:
-    from atproto import Client, client_utils
+    from atproto import Client
+    from atproto.exceptions import AtProtocolError
+    # import atproto
 except ImportError:
     atproto = None
 
@@ -39,11 +41,15 @@ class DatatrackerTracker:
 
     def __init__(self, argv=None):
         self.args = self.parse_args(argv)
-        self.toot_api = None
+        self.client = None
         # self.note(f"{os.environ.get('BSKY_HASHBOTS')}")
         # self.toot_hash = os.environ.get('MY_HOME', " ")
 
     def run(self):
+        if self.args.message_file:
+            self.get_message_file()
+            return
+
         last_seen_id = self.get_last_seen()
         self.note(f"Resuming at event: {last_seen_id}")
         if self.args.markdown:
@@ -79,9 +85,9 @@ class DatatrackerTracker:
                 print(f"* {message}")
             if not self.args.dry_run:
                 try:
-                    # self.toot(f"{self.BSKY_HASH} {message}")
-                    self.toot(f"{message}")
-                except mastodon.MastodonError:
+                    # poot(f"{self.BSKY_HASH} {message}")
+                    self.skeet(f"{message}")
+                except AtProtocolError:
                     last_seen_id = event["id"] - 1
                     break  # didn't tweet so we should bail
             num += 1
@@ -124,33 +130,31 @@ class DatatrackerTracker:
         link = f"{self.API_BASE}/doc/{name}/"
         return template.format(**locals())
 
-    def init_mastodon(self):
+    def init_bsky(self):
         try:
-            self.toot_api = mastodon.Mastodon(
-                                    access_token=os.environ["BSKY_TOKEN_KEY"],
-                                    api_base_url=os.environ["BSKY_API_BASE"],
-                                    ratelimit_method='wait')
-        except mastodon.MastodonError as why:
+            self.client = Client()
+            self.client.login('ietf-wg-dnsop.bsky.social', os.environ["BSKY_TOKEN_KEY"])
+        except AtProtocolError as why:
             print(why)
+                # client.send_post(text='Hello World from Python SDK!')
+
+    # def init_mastodon(self):
+    #     try:
+    #         self.toot_api = mastodon.Mastodon(
+    #                                 access_token=os.environ["BSKY_TOKEN_KEY"],
+    #                                 api_base_url=os.environ["BSKY_API_BASE"],
+    #                                 ratelimit_method='wait')
+    #     except mastodon.MastodonError as why:
+    #         print(why)
 
 
-    def toot(self, message):
-        if self.toot_api is None:
-            self.init_mastodon()
+    def skeet(self, message):
+        if self.client is None:
+            self.init_bsky()
         try:
-            status = self.toot_api.toot(message)
-        except mastodon.MastodonError as why:
+            status = self.client.post(message)
+        except AtProtocolError as why:
             print(why)
-
-
-    # from atproto import Client
-    # BSKY_TOKEN_KEY
-    # client = Client()
-    #     profile = client.login('ietf-wg-dnsop.bsky.social', '')
-    #     print('Welcome,', profile.display_name)
-
-    #     text = client_utils.TextBuilder().text('Hello World from ').link('Python SDK', 'https://atproto.blue')
-    #     post = client.send_post(text)
 
 
     def parse_args(self, argv):
@@ -170,6 +174,12 @@ class DatatrackerTracker:
             dest="dry_run",
             action="store_true",
             help="don't toot; just show messages on STDOUT",
+        )
+        parser.add_argument(
+            "-M",
+            "--message",
+            dest="message_file",
+            help="Use contents of file to post message",
         )
         parser.add_argument(
             "-m",
@@ -199,6 +209,20 @@ class DatatrackerTracker:
             help="file to read last seen ID from and write it back to after processing",
         )
         return parser.parse_args(argv)
+
+    def get_message_file(self):
+        if self.args.message_file:
+            try:
+                with open(self.args.message_file, encoding="ascii") as fh:
+                    message = fh.read()
+            except IOError as why:
+                self.warn(f"Cannot open {self.args.message_file} for reading: {why}")
+                sys.exit(1)
+        if not self.args.dry_run:
+            try:
+                self.skeet(f"{message}")
+            except AtProtocolError as why:
+                print(why)
 
     def get_last_seen(self):
         last_seen_id = None

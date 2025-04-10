@@ -7,7 +7,7 @@ on:
     - '.workflows/run.yml'
     - 'update.sh'
   schedule:
-    - cron: "18 */4 * * *"
+    - cron: "4 */4 * * *"
 
 jobs:
   build:
@@ -26,8 +26,7 @@ jobs:
       env:
         BSKY_TOKEN_KEY: ${{ secrets.BSKY_TOKEN_KEY }}
         BSKY_API_BASE: ${{ secrets.BSKY_API_BASE }}
-        BSKY_HASH: ${{ secrets.BSKY_HASH }}
-        BSKY_HASHBOTS: ${{ vars.BSKY_HASHBOTS }}
+        # BSKY_HASH: ${{ secrets.BSKY_HASH }}
       run: |
         python3 toot_events.py -g ${{ secrets.WORKING_GROUP }} -f LAST_SEEN -m > $GITHUB_STEP_SUMMARY
     - name: Push update

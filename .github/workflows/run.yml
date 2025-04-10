@@ -22,13 +22,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Run toot_events.py
+    - name: Run skeet_events.py
       env:
         BSKY_TOKEN_KEY: ${{ secrets.BSKY_TOKEN_KEY }}
         BSKY_API_BASE: ${{ secrets.BSKY_API_BASE }}
         # BSKY_HASH: ${{ secrets.BSKY_HASH }}
       run: |
-        python3 toot_events.py -g ${{ secrets.WORKING_GROUP }} -f LAST_SEEN -m > $GITHUB_STEP_SUMMARY
+        python3 skeet_events.py -g ${{ secrets.WORKING_GROUP }} -f LAST_SEEN -m > $GITHUB_STEP_SUMMARY
     - name: Push update
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
